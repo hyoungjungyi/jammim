@@ -190,7 +190,6 @@ function triggerShortcut(gesture) {
 // =========== 이벤트 관리 ===========
 app.whenReady().then(() => {
   createWindow();
-  startClapDetection();
 });
 
 app.on('window-all-closed', () => {

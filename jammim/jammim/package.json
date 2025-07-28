@@ -19,14 +19,14 @@
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.2.0",
     "@react-three/postprocessing": "^3.0.4",
+    "clap-detector": "^0.5.3",
     "drei": "^2.2.21",
     "framer-motion": "^12.23.9",
-    "clap-detector": "^0.5.3",
     "mic": "^2.1.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "three": "^0.178.0",
-    "robotjs": "^0.6.0"
+    "robotjs": "^0.6.0",
+    "three": "^0.178.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

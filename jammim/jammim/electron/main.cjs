@@ -1,13 +1,54 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('path');
 const { spawn } = require('child_process');
 const robot = require('robotjs');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const fs = require("fs");
+const dataFile = path.join(__dirname, "gestures.json");
+const axios = require("axios");
+
+const API_KEY = "5ba422352bbc9637d35ff08ff5af681c";
+const LAT = 37.5665;
+const LON = 126.9780;
 
 const pythonPath = 'D:\\ImmerstionCamp\\Week4\\JAMIM\\jamim_env\\Scripts\\python.exe';
 const scriptPath = path.join(__dirname, 'motionCapture', 'motionCapture.py'); 
 const LSTMPath = path.join(__dirname, 'motionCapture');
 let mainWindow = null;
 let pyProc = null;
+
+// 저장 요청
+ipcMain.on("save-gestures", (event, data) => {
+  fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), "utf-8");
+});
+
+// 불러오기 요청
+ipcMain.handle("load-gestures", () => {
+  if (fs.existsSync(dataFile)) {
+    const content = fs.readFileSync(dataFile, "utf-8");
+    return JSON.parse(content);
+  } else {
+    return []; // 빈 배열로 시작
+  }
+});
+
+//openweather 
+ipcMain.handle("get-weather", async () => {
+  try {
+    const res = await axios.get(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${LAT}&lon=${LON}&units=metric&appid=${API_KEY}`
+    );
+    const forecast = res.data.list[0];
+    return {
+      temp: forecast.main.temp,
+      icon: forecast.weather[0].icon,
+      description: forecast.weather[0].description,
+      pop: Math.round((forecast.pop || 0) * 100),
+    };
+  } catch (err) {
+    console.error("Failed to fetch weather:", err);
+    return null;
+  }
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -17,12 +58,14 @@ function createWindow() {
     frame: false,
     alwaysOnTop: true,
     hasShadow: false,
+    fullscreen: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: true,
       contextIsolation: true,
     },
   });
+
   mainWindow.loadURL('http://localhost:5173');
   mainWindow.on('closed', () => { mainWindow = null; });
 }

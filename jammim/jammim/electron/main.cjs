@@ -1,7 +1,9 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const fs = require('fs');
+const { spawn, exec } = require('child_process');
 const robot = require('robotjs');
+const brightness = require('brightness');
 
 const pythonPath = 'D:\\ImmerstionCamp\\Week4\\JAMIM\\jamim_env\\Scripts\\python.exe';
 const scriptPath = path.join(__dirname, 'motionCapture', 'motionCapture.py'); 
@@ -45,6 +47,69 @@ ipcMain.on('start-python', () => {
     });
 });
 
+const isMac = process.platform === 'darwin';
+let isVolumeChange = false;
+let isBrightnessChange = false;
+let isSettingBrightness = false;
+let prev_y = 0;
+
+const MODIFIERS = new Set(['shift', 'ctrl', 'alt', 'meta', 'control']);
+
+function splitModifiers(keys) {
+  const modifiers = [];
+  const normalKeys = [];
+  
+  for (const key of keys) {
+    if (MODIFIERS.has(key.toLowerCase())) {
+      modifiers.push(key);
+    } else {
+      normalKeys.push(key);
+    }
+  }
+  
+  return { modifiers, normalKeys };
+}
+
+const customDataPath = path.join(__dirname, 'motionCapture/customData.json');
+let customGestures = [];
+try {
+  customGestures = JSON.parse(fs.readFileSync(customDataPath, 'utf-8'));
+} catch (e) {
+  console.error('customData.json parse error:', e);
+  customGestures = [];
+}
+
+async function handleBrightnessChange(isDown) {
+  if (isSettingBrightness) {
+    return;
+  }
+  console.log('Now setting brightness:', isDown ? 'down' : 'up');
+  isSettingBrightness = true;
+  try {
+
+    await brightness.get(async function (err, level) {
+      console.log('Current brightness level:', level);
+
+      if (isDown) {
+      console.log('[Gesture] Brightness Down');
+      const newLevel = level > 0.05 ? level - 0.05 : 0;
+      await brightness.set(newLevel, function (err) {
+        console.log('Changed brightness to', newLevel * 100, '%');});
+    } else {
+      console.log('[Gesture] Brightness Up');
+      const newLevel = level < 0.95 ? level + 0.05 : 1;
+      await brightness.set(newLevel, function (err) {
+        console.log('Changed brightness to', newLevel * 100, '%');});
+    }
+    });
+
+  } catch (err) {
+    console.error('Brightness change error:', err);
+  } finally {
+    isSettingBrightness = false;
+  }
+}
+
 // =========== Python 모션 인식 프로세스 실행 ===========
 function runPythonMotionProcess() {
   return new Promise((resolve, reject) => {
@@ -63,20 +128,51 @@ function runPythonMotionProcess() {
       lines.forEach(line => {
         try {
           if (line.startsWith('{')) {
-            // 연속 동작 좌표(JSON): 마우스 이동
             const pos = JSON.parse(line);
             const screen = robot.getScreenSize();
             const x = Math.floor(pos.x * screen.width);
             const y = Math.floor(pos.y * screen.height);
-            robot.moveMouse(x, y);
+            if( isVolumeChange ) {
+              if( prev_y === 0 ) {
+                prev_y = y;
+              }
+              if( y > prev_y + 0.02 ) {
+                console.log('[Gesture] Volume Down');
+                robot.keyTap('audio_vol_down');
+              } else if( y < prev_y - 0.02 ) {
+                console.log('[Gesture] Volume Up');
+                robot.keyTap('audio_vol_up');
+              }
+            } else if( isBrightnessChange ) {
+              if( prev_y === 0 ) {
+                prev_y = y;
+              }
+              if( y > prev_y + 0.1 ) {
+                console.log('[Gesture] Brightness Down');
+                handleBrightnessChange(true);
+              } else if( y < prev_y - 0.1 ) {
+                console.log('[Gesture] Brightness Up');
+                handleBrightnessChange(false);
+              }
+            } else{
+              robot.moveMouse(x, y);
+            }
           } else {
-            if (line === 'paper') {
+            const normalizeLine = line.trim().toLowerCase();
+            if (normalizeLine === 'paper') {
+              prev_y = 0;
+              isBrightnessChange = false;
+              isVolumeChange = false;
               console.log('[Gesture] paper → exit');
               stopPythonProcess();
             } else {
               // 단일 제스처: 단축키 트리거
-              console.log(`[Gesture] detected: ${line}`);
-              triggerShortcut(line);
+              console.log(`[Gesture] detected: ${normalizeLine}`);
+              if(isMac) {
+                triggerShortcutMac(normalizeLine);
+              } else {
+                triggerShortcutWindow(normalizeLine);
+              }
             }
           }
         } catch (e) { /* JSON 파싱 안 되면 무시 */ }
@@ -109,9 +205,39 @@ function stopPythonProcess() {
 
 let isFist = false;
 // =========== 단축키 매핑 (수정/확장 가능) ===========
-function triggerShortcut(gesture) {
-  const normalizeGesture = gesture.trim().toLowerCase();
-  switch (normalizeGesture) {
+function triggerShortcutWindow(gesture) {
+
+  const customAction = customGestures.find(item => item.name === gesture);
+
+  if (customAction) {
+    if (customAction.type === 'shortcut') {
+      const keys = customAction.value;
+      if (!Array.isArray(keys) || keys.length === 0) {
+        console.warn('Invalid shortcut value!');
+        return;
+      }
+      const { modifiers, normalKeys } = splitModifiers(keys);
+      if (normalKeys.length === 0) {
+        console.warn('No normal key specified for shortcut!');
+        return;
+      }
+
+      // 첫 번째 일반 키를 메인 키로 사용
+      const mainKey = normalKeys[0];
+      robot.keyTap(mainKey, modifiers);
+      console.log(`[Custom Shortcut] keyTap: ${mainKey} + [${modifiers.join(', ')}]`);
+    } else if (customAction.type === 'url') {
+      // 링크 열기
+      shell.openExternal(customAction.value);
+      console.log(`[Custom Link] Open: ${customAction.value}`);
+    } else {
+      console.warn(`Unknown custom gesture type: ${customAction.type}`);
+    }
+    return;
+  }
+  isBrightnessChange = false;
+  isVolumeChange = false;
+  switch (gesture) {
     case 'left_swipe':
       robot.keyTap('tab', ['alt']);
       break;
@@ -131,13 +257,137 @@ function triggerShortcut(gesture) {
         isFist = true;
       }
       break;
-    case 'point':
+    case 'erm':
       console.log('[Shortcut] Point gesture detected');
       if(isFist) {
         console.log('[Shortcut] deactivate mouse down');
         robot.mouseToggle('up', 'left');
         isFist = false;
       }
+      break;
+    case 'left_ok':
+      console.log('[Shortcut] left_ok gesture detected');
+      if(!isVolumeChange) {
+        isVolumeChange = true;
+      }
+      break;
+    case 'right_ok':
+      console.log('[Shortcut] right_ok gesture detected');
+      if(!isBrightnessChange) {
+        isBrightnessChange = true;
+      }
+      break;
+    case 'zoom_in':
+      robot.keyTap('f');
+      break;
+    case 'zoom_out':
+      robot.keyTap('f');
+      break;
+    case 'v':
+      exec('start microsoft.windows.camera:', (err) => {
+        console.log('[Shortcut] open Camera App');
+      });
+      break;
+    case 'spider':
+      shell.openExternal('https://www.youtube.com/watch?v=B9synWjqBn8&list=RDB9synWjqBn8&start_radio=1');
+      break;
+    case 'thumbsup':
+      robot.keyTap('space');
+      break;
+    default:
+      console.log(`[Shortcut] Unknown gesture: ${gesture}`);
+  }
+}
+
+function triggerShortcutMac(gesture) {
+
+  const customAction = customGestures.find(item => item.name === gesture);
+
+  if (customAction) {
+    if (customAction.type === 'shortcut') {
+      const keys = customAction.value;
+      if (!Array.isArray(keys) || keys.length === 0) {
+        console.warn('Invalid shortcut value!');
+        return;
+      }
+      const { modifiers, normalKeys } = splitModifiers(keys);
+      if (normalKeys.length === 0) {
+        console.warn('No normal key specified for shortcut!');
+        return;
+      }
+
+      // 첫 번째 일반 키를 메인 키로 사용
+      const mainKey = normalKeys[0];
+      robot.keyTap(mainKey, modifiers);
+      console.log(`[Custom Shortcut] keyTap: ${mainKey} + [${modifiers.join(', ')}]`);
+    } else if (customAction.type === 'url') {
+      // 링크 열기
+      shell.openExternal(customAction.value);
+      console.log(`[Custom Link] Open: ${customAction.value}`);
+    } else {
+      console.warn(`Unknown custom gesture type: ${customAction.type}`);
+    }
+    return;
+  }
+  isBrightnessChange = false;
+  isVolumeChange = false;
+  switch (gesture) {
+    case 'left_swipe':
+      robot.keyTap('tab', ['command']);
+      break;
+    case 'fist':
+      console.log('[Shortcut] Fist gesture detected');
+      if(!isFist) {
+        console.log('[Shortcut] acivate mouse down');
+        robot.mouseToggle('down', 'left');
+        isFist = true;
+      }
+      break;
+    case 'make_fist':
+      console.log('[Shortcut] Make fist gesture detected');
+      if(!isFist) {
+        console.log('[Shortcut] acivate mouse down');
+        robot.mouseToggle('down', 'left');
+        isFist = true;
+      }
+      break;
+    case 'erm':
+      console.log('[Shortcut] Point gesture detected');
+      if(isFist) {
+        console.log('[Shortcut] deactivate mouse down');
+        robot.mouseToggle('up', 'left');
+        isFist = false;
+      }
+      break;
+    case 'left_ok':
+      console.log('[Shortcut] left_ok gesture detected');
+      if(!isVolumeChange) {
+        isVolumeChange = true;
+      }
+      break;
+    case 'right_ok':
+      console.log('[Shortcut] right_ok gesture detected');
+      if(!isBrightnessChange) {
+        isBrightnessChange = true;
+      }
+      break;
+    case 'zoom_in':
+      robot.keyTap('f');
+      break;
+    case 'zoom_out':
+      robot.keyTap('f');
+      robot.keyTap('esc');
+      break;
+    case 'v':
+      exec('open -a "Photo Booth"', (err) => {
+        console.log('[Shortcut] open Camera App');
+      });
+      break;
+    case 'spider':
+      shell.openExternal('https://www.youtube.com/watch?v=B9synWjqBn8&list=RDB9synWjqBn8&start_radio=1');
+      break;
+    case 'thumbsup':
+      robot.keyTap('space');
       break;
     default:
       console.log(`[Shortcut] Unknown gesture: ${gesture}`);
@@ -147,18 +397,15 @@ function triggerShortcut(gesture) {
 // =========== 이벤트 관리 ===========
 app.whenReady().then(() => {
   createWindow();
-  startClapDetection();
 });
 
 app.on('window-all-closed', () => {
   stopPythonProcess();
-  stopClapDetection();
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('before-quit', () => {
   stopPythonProcess();
-  stopClapDetection();
 });
 
 app.on('activate', () => {

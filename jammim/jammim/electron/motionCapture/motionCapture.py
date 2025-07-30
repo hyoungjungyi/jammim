@@ -7,8 +7,8 @@ import json
 import time
 from tensorflow.keras.models import load_model
 
-CONTINUOUS_GESTURE = {'point', 'down_swipe', 'up_swipe', 'fist', 'make_fist'}
-EXIT_GESTURE = 'paper'  # 연속 모드 종료 트리거
+CONTINUOUS_GESTURE = {'point', 'down_swipe', 'up_swipe', 'fist', 'right_ok', 'left_ok', 'make_fist', 'erm'}
+EXIT_GESTURE = {'paper'}  # 연속 모드 종료 트리거
 
 def predict_gesture(sequence, model, idx2label):
     if len(sequence) < 15:
@@ -44,39 +44,38 @@ def main():
 
     # 1. 최초 제스처 인식
     temp_sequence = []
-    frames_collected = 0
-    while frames_collected < 20:
+    timeout = 5.0
+    while len(temp_sequence) < 20:
         ret, frame = cap.read()
-        if not ret:
-            print("error:frame", flush=True)
-            cap.release()
-            sys.exit(1)
+        if not ret or time.time() - start_time > timeout:
+            print('Failed to collect enough frames or timeout')
+            break
+
         frame = cv2.flip(frame, 1)
         result = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
         if result.multi_hand_landmarks:
             for res in result.multi_hand_landmarks:
                 joint = np.array([[lm.x, lm.y, lm.z] for lm in res.landmark]).flatten()
                 temp_sequence.append(joint)
-                frames_collected += 1
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            cap.release()
-            cv2.destroyAllWindows()
-            sys.exit(1)
-    cv2.destroyAllWindows()
+                if len(temp_sequence) >= 20:
+                    break
 
-    if len(temp_sequence) == 20:
-        gesture_name = predict_gesture(temp_sequence[5:], model, idx2label)
-        print(gesture_name, flush=True)
-    else:
-        print("none", flush=True)
+    if len(temp_sequence) < 20:
+        print('none', flush=True)
         cap.release()
         sys.exit(0)
 
+    gesture_name = predict_gesture(temp_sequence[5:], model, idx2label)
+    print(gesture_name, flush=True)
+
     # 2. 연속 동작 모드 진입
+    last_send_time = 0
+    min_interval = 0.3
     if gesture_name in CONTINUOUS_GESTURE:
         # 연속 모드에서 최신 프레임 15개 기준 sliding window 예측
         sliding_sequence = []
-        prev_geture = None
+        prev_geture = gesture_name
         try:
             while True:
                 ret, frame = cap.read()
@@ -89,18 +88,22 @@ def main():
                     joint = np.array([[lm.x, lm.y, lm.z] for lm in res.landmark]).flatten()
                     sliding_sequence.append(joint)
                     # ===== 실시간 좌표 전달 =====
-                    index = res.landmark[mp_hands.HandLandmark.WRIST]
-                    pos = {'x': index.x, 'y': index.y}
-                    print(json.dumps(pos), flush=True)
+                    now = time.time()
+                    if now - last_send_time > min_interval:
+                        index = res.landmark[mp_hands.HandLandmark.WRIST]
+                        pos = {'x': index.x, 'y': index.y}
+                        print(json.dumps(pos), flush=True)
+                        last_send_time = now
 
                     if len(sliding_sequence) >= 15:
                         curr_gesture = predict_gesture(sliding_sequence, model, idx2label)
                         if curr_gesture != prev_geture:
-                            print(curr_gesture, flush=True)
-                            prev_geture = curr_gesture
+                            if curr_gesture in CONTINUOUS_GESTURE:
+                                print(curr_gesture, flush=True)
+                                prev_geture = curr_gesture
 
-                        if curr_gesture == EXIT_GESTURE:
-                            print(EXIT_GESTURE, flush=True)
+                        if curr_gesture in EXIT_GESTURE:
+                            print(curr_gesture, flush=True)
                             break
                         # sliding window 유지
                         if len(sliding_sequence) > 20:

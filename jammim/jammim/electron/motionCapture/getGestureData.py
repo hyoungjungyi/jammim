@@ -26,7 +26,7 @@ if os.path.exists('gesture_seq_data.pkl'):
     print(f"이전 데이터 {len(data)}개 불러옴")
 else:
     data = []
-label = 'fist'   # 동작명
+label = 'ok'   # 동작명
 collected_count = 0
 
 collecting = False
@@ -50,7 +50,12 @@ while cap.isOpened():
             last_saved_time = time.time()
 
     if result.multi_hand_landmarks and collecting and not paused:
-        for res in result.multi_hand_landmarks:
+        for res, handedness in zip(result.multi_hand_landmarks, result.multi_handedness):
+            gesture_label = handedness.classification[0].label.lower()
+            if gesture_label == 'left':
+                label = 'left_ok'
+            elif gesture_label == 'right':
+                label = 'right_ok'
             joint = np.array([[lm.x, lm.y, lm.z] for lm in res.landmark]).flatten()
             if time.time() - last_saved_time >= save_interval:
                 sequence.append(joint)

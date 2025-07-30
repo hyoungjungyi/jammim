@@ -11,6 +11,7 @@ lerna-debug.log*
 dist
 dist-ssr
 clapDetect.cjs
+getBrightness.cjs
 *.local
 
 # Editor directories and files

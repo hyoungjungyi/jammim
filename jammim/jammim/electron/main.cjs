@@ -4,33 +4,52 @@ const fs = require('fs');
 const { spawn, exec } = require('child_process');
 const robot = require('robotjs');
 const brightness = require('brightness');
-const dataFile = path.join(__dirname, "gestures.json");
+const defaultGesturesPath = path.join(__dirname,'motionCapture','data', 'gestures.json');
+const addCustomPath= path.join(__dirname,'motionCapture','addCustomGesture.py');
+console.log("dir name: ", __dirname);
+console.log("default gestures path: ", defaultGesturesPath);
 const axios = require("axios");
 
 const API_KEY = "5ba422352bbc9637d35ff08ff5af681c";
 const LAT = 37.5665;
 const LON = 126.9780;
 
-const pythonPath = 'D:\\ImmerstionCamp\\Week4\\JAMIM\\jamim_env\\Scripts\\python.exe';
+const pythonPath = '/Users/hyeongjeongyi/madcamp/jammim_ui/jammim/jammim/jamim_env/bin/python';
 const scriptPath = path.join(__dirname, 'motionCapture', 'motionCapture.py'); 
 const LSTMPath = path.join(__dirname, 'motionCapture');
 let mainWindow = null;
 let pyProc = null;
+const customDataPath = path.join(__dirname, 'motionCapture/data/customData.json');
+let customGestures = [];
+try {
+  customGestures = JSON.parse(fs.readFileSync(customDataPath, 'utf-8'));
+} catch (e) {
+  console.error('customData.json parse error:', e);
+  customGestures = [];
+}
 
-// 저장 요청
-ipcMain.on("save-gestures", (event, data) => {
-  fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), "utf-8");
-});
 
-// 불러오기 요청
-ipcMain.handle("load-gestures", () => {
-  if (fs.existsSync(dataFile)) {
-    const content = fs.readFileSync(dataFile, "utf-8");
+
+ipcMain.handle('load-default-gestures', () => {
+  if (fs.existsSync(defaultGesturesPath)) {
+    const content = fs.readFileSync(defaultGesturesPath, 'utf-8');
     return JSON.parse(content);
-  } else {
-    return []; // 빈 배열로 시작
   }
+  return [];
 });
+
+ipcMain.handle('load-custom-gestures', () => {
+  if (fs.existsSync(customDataPath)) {
+    const content = fs.readFileSync(customDataPath, 'utf-8');
+    return JSON.parse(content);
+  }
+  return [];
+});
+
+ipcMain.on('save-custom-gestures', (event, data) => {
+  fs.writeFileSync(customDataPath, JSON.stringify(data, null, 2), 'utf-8');
+});
+
 
 //openweather 
 ipcMain.handle("get-weather", async () => {
@@ -94,6 +113,34 @@ let isVolumeChange = false;
 let isBrightnessChange = false;
 let isSettingBrightness = false;
 let prev_y = 0;
+const volumeStep = 2;  // 볼륨 조절 단위 (%)
+
+// 볼륨 정보 가져오는 AppleScript 함수
+function getCurrentVolume(callback) {
+  exec('osascript -e "output volume of (get volume settings)"', (err, stdout, stderr) => {
+    if (err) {
+      console.error('Failed to get volume:', err);
+      callback(null);
+      return;
+    }
+    const volume = parseInt(stdout.trim(), 10);
+    callback(volume);
+  });
+}
+
+// 볼륨 변경 AppleScript 실행 함수
+function setVolume(newVolume) {
+  // newVolume는 0~100 범위 내로 제한
+  const vol = Math.min(100, Math.max(0, newVolume));
+  const cmd = `osascript -e "set volume output volume ${vol}"`;
+  exec(cmd, (err) => {
+    if (err) {
+      console.error('Failed to set volume:', err);
+    } else {
+      console.log(`Volume set to ${vol}%`);
+    }
+  });
+}
 
 const MODIFIERS = new Set(['shift', 'ctrl', 'alt', 'meta', 'control']);
 
@@ -112,14 +159,7 @@ function splitModifiers(keys) {
   return { modifiers, normalKeys };
 }
 
-const customDataPath = path.join(__dirname, 'motionCapture/customData.json');
-let customGestures = [];
-try {
-  customGestures = JSON.parse(fs.readFileSync(customDataPath, 'utf-8'));
-} catch (e) {
-  console.error('customData.json parse error:', e);
-  customGestures = [];
-}
+
 
 async function handleBrightnessChange(isDown) {
   if (isSettingBrightness) {
@@ -180,10 +220,26 @@ function runPythonMotionProcess() {
               }
               if( y > prev_y + 0.02 ) {
                 console.log('[Gesture] Volume Down');
-                robot.keyTap('audio_vol_down');
+                if (isMac) {
+                  getCurrentVolume((currentVolume) => {
+                    if (currentVolume !== null) {
+                      setVolume(currentVolume - volumeStep);
+                    }
+                  })
+                } else {
+                  robot.keyTap('audio_vol_down');
+                }
               } else if( y < prev_y - 0.02 ) {
                 console.log('[Gesture] Volume Up');
-                robot.keyTap('audio_vol_up');
+                if (isMac) {
+                  getCurrentVolume((currentVolume) => {
+                    if (currentVolume !== null) {
+                      setVolume(currentVolume + volumeStep);
+                    }
+                  })
+                } else {
+                  robot.keyTap('audio_vol_up');
+                }
               }
             } else if( isBrightnessChange ) {
               if( prev_y === 0 ) {
@@ -452,4 +508,21 @@ app.on('before-quit', () => {
 
 app.on('activate', () => {
   if (mainWindow === null) createWindow();
+});
+
+ipcMain.on('start-webcam-script', () => {
+  console.log("opening python file..", addCustomPath);
+  const python = spawn('python3', [addCustomPath]);
+
+  python.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  python.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  python.on('close', (code) => {
+    console.log(`Python script exited with code ${code}`);
+  });
 });

@@ -1,0 +1,58 @@
+[
+  {
+    "name": "fist",
+    "type" : "url",
+    "value" : "click (pressed down)"
+  },
+   
+  {
+    "name": "index",
+    "type" : "url",
+    "value" : "move cursor"
+  },
+  {
+    "name": "left swipe",
+    "type" : "url",
+    "value" : "Alt + Tab"
+  },
+  {
+    "name": "thumbs up",
+    "type": "url",
+    "value": "space"
+  },
+  {
+    "name": "up/down swipe",
+    "type": "url",
+    "value":"up down volume"
+  },
+  {
+    "name": "both swipe",
+    "type": "url",
+    "value":"full screen"
+  },
+  {
+    "name": "zoom out",
+    "type": "url",
+    "value":"esc"
+  },
+  {
+    "name": "v",
+    "type": "url",
+    "value":"phothobooth"
+  },
+  {
+    "name": "spider",
+    "type": "url",
+    "value":"party mode"
+  },
+  {
+    "name": "right/left turn",
+    "type": "url",
+    "value":"up down brightness"
+  },
+  {
+    "name": "paper",
+    "type": "url",
+    "value":"exit"
+  }
+]

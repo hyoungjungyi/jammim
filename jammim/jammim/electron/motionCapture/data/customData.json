@@ -1,0 +1,53 @@
+[
+  {
+    "name": "skr",
+    "type": "shortcut",
+    "value": [
+      "4",
+      "2"
+    ],
+    "isCustom": true
+  },
+  {
+    "name": "bts",
+    "type": "shortcut",
+    "value": [
+      "4",
+      "6",
+      "7",
+      "5"
+    ],
+    "isCustom": true
+  },
+  {
+    "name": "fillitup",
+    "type": "shortcut",
+    "value": [
+      "2",
+      "5",
+      "3"
+    ],
+    "isCustom": true
+  },
+  {
+    "name": "forreal",
+    "type": "shortcut",
+    "value": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "isCustom": true
+  },
+  {
+    "name": "forreal",
+    "type": "shortcut",
+    "value": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ]
+  }
+]

@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useRef, useEffect } from 'react';
+import './App.css';
+import "./index.css";
+import ArcReactorEffect ,{SpinningArc} from './components/ArcReactorEffect';
+import GesturePanel from './components/GesturePanel';
+import ClockWeatherPanel from './components/ClockWeatherPanel';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -74,32 +76,42 @@ function App() {
   };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <button onClick={handlePythonStart} disabled={isListening} style={{marginLeft: 8}}>
-          {isListening ? `듣는 중... :${transcript}` : `음성 인식 지속` }
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gridTemplateRows: 'auto auto',
+      gap: '20px',
+      padding: 20,
+      color: 'white',
+    }}
+  >
+    <div>
+      <GesturePanel />
+    </div>
+    <div>
+      <ArcReactorEffect />
+    </div>
+    <div>
+      <ClockWeatherPanel />
+    </div>
+    <div style={{ gridColumn: '1 / span 3', textAlign: 'center' }}>
+      <button
+        onClick={handlePythonStart}
+        disabled={isListening}
+        style={{
+          marginTop: 10,
+          padding: '10px 20px',
+          fontSize: '16px',
+          cursor: 'pointer',
+        }}
+      >
+        {isListening ? `듣는 중... :${transcript}` : `음성 인식 지속`}
+      </button>
+    </div>
+  </div>
+ );
 
-export default App
+
+}
+export default App;

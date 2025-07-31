@@ -24,3 +24,5 @@ getBrightness.cjs
 *.njsproj
 *.sln
 *.sw?
+
+/jamim_env

@@ -7,5 +7,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadCustomGestures: () => ipcRenderer.invoke('load-custom-gestures'),
   saveCustomGestures: (gestures) => ipcRenderer.send('save-custom-gestures', gestures),
   startWebcam: () => ipcRenderer.send('start-webcam-script'),
+  trainLSTM: () => ipcRenderer.send('train-LSTM-script'),
   sendCustomGestureData: (data) => ipcRenderer.send("custom-gesture-data", data),
 });

@@ -9,7 +9,7 @@ import sys , json, base64
 
 # 설정
 box_count = 9
-per_box = 1
+per_box = 4
 current_box = 0
 per_box_count = 0
 
@@ -144,7 +144,7 @@ while cap.isOpened():
     if not collecting and not countdown_in_progress:
         instruction = instruction_texts[per_box_count]
         show_instruction_time = time.time()
-        countdown_start_time = show_instruction_time + 2  # 2초 instruction -> countdown 시작
+        countdown_start_time = show_instruction_time + 3  # 2초 instruction -> countdown 시작
         countdown_in_progress = True
         print(f"📢 Box {current_box+1} - {instruction} 준비")
 

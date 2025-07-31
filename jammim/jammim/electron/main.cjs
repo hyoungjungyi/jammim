@@ -526,3 +526,20 @@ ipcMain.on('start-webcam-script', () => {
     console.log(`Python script exited with code ${code}`);
   });
 });
+
+ipcMain.on('train-LSTM-script', () => {
+  console.log('Now training LSTM model');
+  const trainLSTM = spawn(pythonPath, [path.join(__dirname, 'motionCapture', 'trainLSTM.py')]);
+
+  trainLSTM.stdout.on('data', (data) => {
+    console.log(`trainLSTM stdout: ${data}`);
+  });
+
+  trainLSTM.stderr.on('data', (data) => {
+    console.error(`trainLSTM stderr: ${data}`);
+  });
+
+  trainLSTM.on('close', (code) => {
+    console.log(`TrainLSTM script exited with code ${code}`);
+  });
+});

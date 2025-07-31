@@ -94,6 +94,34 @@ let isVolumeChange = false;
 let isBrightnessChange = false;
 let isSettingBrightness = false;
 let prev_y = 0;
+const volumeStep = 2;  // 볼륨 조절 단위 (%)
+
+// 볼륨 정보 가져오는 AppleScript 함수
+function getCurrentVolume(callback) {
+  exec('osascript -e "output volume of (get volume settings)"', (err, stdout, stderr) => {
+    if (err) {
+      console.error('Failed to get volume:', err);
+      callback(null);
+      return;
+    }
+    const volume = parseInt(stdout.trim(), 10);
+    callback(volume);
+  });
+}
+
+// 볼륨 변경 AppleScript 실행 함수
+function setVolume(newVolume) {
+  // newVolume는 0~100 범위 내로 제한
+  const vol = Math.min(100, Math.max(0, newVolume));
+  const cmd = `osascript -e "set volume output volume ${vol}"`;
+  exec(cmd, (err) => {
+    if (err) {
+      console.error('Failed to set volume:', err);
+    } else {
+      console.log(`Volume set to ${vol}%`);
+    }
+  });
+}
 
 const MODIFIERS = new Set(['shift', 'ctrl', 'alt', 'meta', 'control']);
 
@@ -180,10 +208,26 @@ function runPythonMotionProcess() {
               }
               if( y > prev_y + 0.02 ) {
                 console.log('[Gesture] Volume Down');
-                robot.keyTap('audio_vol_down');
+                if (isMac) {
+                  getCurrentVolume((currentVolume) => {
+                    if (currentVolume !== null) {
+                      setVolume(currentVolume - volumeStep);
+                    }
+                  })
+                } else {
+                  robot.keyTap('audio_vol_down');
+                }
               } else if( y < prev_y - 0.02 ) {
                 console.log('[Gesture] Volume Up');
-                robot.keyTap('audio_vol_up');
+                if (isMac) {
+                  getCurrentVolume((currentVolume) => {
+                    if (currentVolume !== null) {
+                      setVolume(currentVolume + volumeStep);
+                    }
+                  })
+                } else {
+                  robot.keyTap('audio_vol_up');
+                }
               }
             } else if( isBrightnessChange ) {
               if( prev_y === 0 ) {

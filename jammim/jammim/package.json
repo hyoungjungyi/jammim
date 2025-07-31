@@ -13,15 +13,15 @@
     "electron-build": "electron ."
   },
   "dependencies": {
-    "brightness": "^2.2.0",
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/drawing_utils": "^0.3.1675466124",
     "@mediapipe/hands": "^0.4.1675469240",
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.2.0",
     "@react-three/postprocessing": "^3.0.4",
+    "brightness": "^2.2.0",
     "clap-detector": "^0.5.3",
-    "drei": "^2.2.21",
+    "drei": "^0.0.45",
     "framer-motion": "^12.23.9",
     "mic": "^2.1.2",
     "react": "^19.1.0",

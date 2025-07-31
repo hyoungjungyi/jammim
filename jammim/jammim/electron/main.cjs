@@ -14,7 +14,7 @@ const API_KEY = "5ba422352bbc9637d35ff08ff5af681c";
 const LAT = 37.5665;
 const LON = 126.9780;
 
-const pythonPath = '/Users/hyeongjeongyi/madcamp/jammim_ui/jammim/jammim/jamim_env/bin/python';
+const pythonPath = 'D:\\ImmerstionCamp\\Week4\\JAMIM\\jamim_env\\Scripts\\python.exe';
 const scriptPath = path.join(__dirname, 'motionCapture', 'motionCapture.py'); 
 const LSTMPath = path.join(__dirname, 'motionCapture');
 let mainWindow = null;
@@ -302,7 +302,7 @@ function stopPythonProcess() {
 }
 
 let isFist = false;
-// =========== 단축키 매핑 (수정/확장 가능) ===========
+// =========== 단축키 매핑 ===========
 function triggerShortcutWindow(gesture) {
 
   const customAction = customGestures.find(item => item.name === gesture);
@@ -355,7 +355,7 @@ function triggerShortcutWindow(gesture) {
         isFist = true;
       }
       break;
-    case 'erm':
+    case 'erm', 'point':
       console.log('[Shortcut] Point gesture detected');
       if(isFist) {
         console.log('[Shortcut] deactivate mouse down');
@@ -449,7 +449,7 @@ function triggerShortcutMac(gesture) {
         isFist = true;
       }
       break;
-    case 'erm':
+    case 'erm', 'point':
       console.log('[Shortcut] Point gesture detected');
       if(isFist) {
         console.log('[Shortcut] deactivate mouse down');
@@ -512,7 +512,7 @@ app.on('activate', () => {
 
 ipcMain.on('start-webcam-script', () => {
   console.log("opening python file..", addCustomPath);
-  const python = spawn('python3', [addCustomPath]);
+  const python = spawn(pythonPath, [addCustomPath]);
 
   python.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
@@ -527,6 +527,7 @@ ipcMain.on('start-webcam-script', () => {
   });
 });
 
+//이거 보내는거 만들어야됨 버튼 만들어줘잉
 ipcMain.on('train-LSTM-script', () => {
   console.log('Now training LSTM model');
   const trainLSTM = spawn(pythonPath, [path.join(__dirname, 'motionCapture', 'trainLSTM.py')]);
@@ -543,3 +544,5 @@ ipcMain.on('train-LSTM-script', () => {
     console.log(`TrainLSTM script exited with code ${code}`);
   });
 });
+
+

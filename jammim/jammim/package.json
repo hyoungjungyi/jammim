@@ -21,7 +21,7 @@
     "@react-three/postprocessing": "^3.0.4",
     "brightness": "^2.2.0",
     "clap-detector": "^0.5.3",
-    "drei": "^2.2.21",
+    "drei": "^0.0.45",
     "framer-motion": "^12.23.9",
     "mic": "^2.1.2",
     "react": "^19.1.0",

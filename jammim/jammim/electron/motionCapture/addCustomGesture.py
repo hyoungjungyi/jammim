@@ -101,10 +101,10 @@ seq_length = 15
 sequence = []
 data = []
 
-if os.path.exists('test_seq_data.pkl'):
-    with open('test_seq_data.pkl', 'rb') as f:
+if os.path.exists(seq_path):
+    with open(seq_path, 'rb') as f:
         data = pickle.load(f)
-    print(f"이전 데이터 {len(data)}개 불러옴")
+    print(f"got data from prev : {len(data)}")
 else:
     data = []
 
@@ -137,7 +137,7 @@ while cap.isOpened():
 
     # box 넘어가면 종료
     if current_box >= box_count:
-        print("✅ 모든 박스 수집 완료!")
+        print("All boxes collected!")
         break
 
     # --- 수집 전: instruction 보여주기 + countdown ---
@@ -146,7 +146,7 @@ while cap.isOpened():
         show_instruction_time = time.time()
         countdown_start_time = show_instruction_time + 3  # 2초 instruction -> countdown 시작
         countdown_in_progress = True
-        print(f"📢 Box {current_box+1} - {instruction} 준비")
+        print(f"Box {current_box+1} - {instruction} ready")
 
     now = time.time()
 
@@ -157,7 +157,7 @@ while cap.isOpened():
             collecting = True
             collecting_sequence = True
             sequence = []
-            print("🎬 GO! Start Recording")
+            print("GO! Start Recording")
         else:
             cv2.putText(img, instruction, (200, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 3)
             cv2.putText(img, f"{int(remaining)+1}", (300, 250), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 6)
@@ -172,7 +172,7 @@ while cap.isOpened():
                 data.append([np.array(sequence), label])
                 collected_count += 1
                 per_box_count += 1
-                print(f"📦 Box {current_box+1} - {label} [{per_box_count}/{per_box}]")
+                print(f"Box {current_box+1} - {label} [{per_box_count}/{per_box}]")
 
                 # 증강
                 for aug_seq in augment_sequence(np.array(sequence), noise_std=0.01, n_aug=n_aug):
@@ -241,7 +241,7 @@ cv2.destroyAllWindows()
 # 저장
 with open(seq_path, 'wb') as f:
     pickle.dump(data, f)
-print(f"최종 저장 시퀀스: {collected_count}개")
+print(f"Saved seq: {collected_count}개")
 
 all_labels = sorted(list(set([x[1] for x in data])))
 testlabel2idx = {label: idx for idx, label in enumerate(all_labels)}

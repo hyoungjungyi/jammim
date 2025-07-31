@@ -26,6 +26,7 @@
     "mic": "^2.1.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-draggable": "^4.5.0",
     "robotjs": "^0.6.0",
     "three": "^0.178.0"
   },

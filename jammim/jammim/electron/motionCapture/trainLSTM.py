@@ -5,8 +5,13 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# 경로 만들기
+seq_path = os.path.join(base_dir, "gesture_seq_data.pkl")
+
 # 데이터 로딩
-with open('gesture_seq_data.pkl', 'rb') as f:
+with open(seq_path, 'rb') as f:
     data = pickle.load(f)
 X = np.array([x[0] for x in data])
 y = np.array([x[1] for x in data])

@@ -30,16 +30,5 @@
     "name": "tweleve",
     "type": "url",
     "value": "https://www.youtube.com/watch?v=6ze7cFI6QBk"
-  },
-  {
-    "name": "twelve",
-    "type": "url",
-    "value": "https://www.youtube.com/watch?v=6ze7cFI6QBk",
-    "isCustom": true
-  },
-  {
-    "name": "twelve",
-    "type": "url",
-    "value": "https://www.youtube.com/watch?v=6ze7cFI6QBk"
   }
 ]

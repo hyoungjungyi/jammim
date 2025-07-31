@@ -14,7 +14,7 @@ const API_KEY = "5ba422352bbc9637d35ff08ff5af681c";
 const LAT = 37.5665;
 const LON = 126.9780;
 
-const pythonPath = 'D:\\ImmerstionCamp\\Week4\\JAMIM\\jamim_env\\Scripts\\python.exe';
+const pythonPath = '/Users/hyeongjeongyi/madcamp/jammim_ui/jammim/jammim/jamim_env/bin/python3';
 const scriptPath = path.join(__dirname, 'motionCapture', 'motionCapture.py'); 
 const LSTMPath = path.join(__dirname, 'motionCapture');
 let mainWindow = null;

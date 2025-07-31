@@ -162,25 +162,43 @@ return (
     </div>
 
     {/* Add Gesture 버튼은 항상 보여야 하므로 리스트 바깥에 위치 */}
-    <button
-      onClick={handleAddGesture}
+    <div
       style={{
+        display: "flex",
+        justifyContent: "space-between", // 버튼 사이 간격 확보
+        gap: 10,                         // 버튼 사이 여백
         marginTop: 20,
-        width: '50%',
-        borderRadius: 10,
-        background: 'rgba(255,255,255,0.2)',
-        border: 'none',
-        color: 'white',
-        padding: 10,
-        position: 'sticky', // 스크롤 시에도 항상 보이게 하려면 sticky 사용 가능 (필요 시)
-        bottom: 0,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 10,
       }}
     >
-      Add Gesture
-    </button>
+      <button
+        onClick={handleAddGesture}
+        style={{
+          flex: 1,
+          borderRadius: 10,
+          background: "rgba(255,255,255,0.2)",
+          border: "none",
+          color: "white",
+          padding: 10,
+        }}
+      >
+        Add Gesture
+      </button>
+      <button
+        onClick={() => window.electronAPI.trainLSTM()} // <- 필요시 이 핸들러도 정의되어 있어야 함
+        style={{
+          flex: 1,
+          borderRadius: 10,
+          background: "rgba(99, 142, 169, 0.2)",
+          border: "none",
+          color: "white",
+          padding: 10,
+        }}
+      >
+        Train Model
+      </button>
+    </div>
+
+    
 
       {/* 모달 */}
       {showModal && (

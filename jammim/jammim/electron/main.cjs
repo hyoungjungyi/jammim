@@ -544,3 +544,5 @@ ipcMain.on('train-LSTM-script', () => {
     console.log(`TrainLSTM script exited with code ${code}`);
   });
 });
+
+

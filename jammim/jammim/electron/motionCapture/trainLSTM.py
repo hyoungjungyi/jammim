@@ -7,6 +7,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 import os
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
+save_path = os.path.join(base_dir, "gesture_lstm_model.keras")
 
 # 경로 만들기
 seq_path = os.path.join(base_dir, "gesture_seq_data.pkl")
@@ -37,4 +38,4 @@ model = Sequential([
 ])
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.fit(X_train, y_train_cat, epochs=30, validation_data=(X_val, y_val_cat), batch_size=32)
-model.save('gesture_lstm_model.keras')
+model.save(save_path)

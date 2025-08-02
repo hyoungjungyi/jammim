@@ -109,6 +109,7 @@ ipcMain.on('start-python', () => {
 });
 
 const isMac = process.platform === 'darwin';
+console.log("isMac: ", isMac);
 let isVolumeChange = false;
 let isBrightnessChange = false;
 let isSettingBrightness = false;
@@ -256,6 +257,7 @@ function runPythonMotionProcess() {
               robot.moveMouse(x, y);
             }
           } else {
+            console.log("너무 배고파");
             const normalizeLine = line.trim().toLowerCase();
             if (normalizeLine === 'paper') {
               prev_y = 0;
@@ -265,10 +267,12 @@ function runPythonMotionProcess() {
               stopPythonProcess();
             } else {
               // 단일 제스처: 단축키 트리거
-              console.log(`[Gesture] detected: ${normalizeLine}`);
+              console.log(`[Gesture] detected: ${normalizeLine}, isMac:`,isMac);
               if(isMac) {
+                console.log("triggering shortcut for mac",isMac);
                 triggerShortcutMac(normalizeLine);
               } else {
+                console.log("triggering shortcut for window");
                 triggerShortcutWindow(normalizeLine);
               }
             }
@@ -355,7 +359,7 @@ function triggerShortcutWindow(gesture) {
         isFist = true;
       }
       break;
-    case 'erm', 'point':
+    case 'erm':
       console.log('[Shortcut] Point gesture detected');
       if(isFist) {
         console.log('[Shortcut] deactivate mouse down');
@@ -398,7 +402,7 @@ function triggerShortcutWindow(gesture) {
 }
 
 function triggerShortcutMac(gesture) {
-
+  console.log("triggering shortcut for mac, inside fun");
   const customAction = customGestures.find(item => item.name === gesture);
 
   if (customAction) {
@@ -449,7 +453,15 @@ function triggerShortcutMac(gesture) {
         isFist = true;
       }
       break;
-    case 'erm', 'point':
+    case 'erm':
+      console.log('[Shortcut] Point gesture detected');
+      if(isFist) {
+        console.log('[Shortcut] deactivate mouse down');
+        robot.mouseToggle('up', 'left');
+        isFist = false;
+      }
+      break;
+    case 'point':
       console.log('[Shortcut] Point gesture detected');
       if(isFist) {
         console.log('[Shortcut] deactivate mouse down');
@@ -485,6 +497,7 @@ function triggerShortcutMac(gesture) {
       shell.openExternal('https://www.youtube.com/watch?v=B9synWjqBn8&list=RDB9synWjqBn8&start_radio=1');
       break;
     case 'thumbsup':
+      console.log("tunmbsup detected in mac")
       robot.keyTap('space');
       break;
     default:
